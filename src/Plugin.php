@@ -11,6 +11,7 @@ namespace DarajaMpesa;
 
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
 use DarajaMpesa\Gateway\GatewayRegistrar;
+use DarajaMpesa\Gateway\CheckoutBlocksRegistrar;
 use DarajaMpesa\Application\ConfigurationFactory;
 use DarajaMpesa\Infrastructure\Admin\ManualVerificationController;
 use DarajaMpesa\Infrastructure\RuntimeFactory;
@@ -76,6 +77,10 @@ final class Plugin {
 			dirname( plugin_basename( DARAJA_MPESA_FILE ) ) . '/languages'
 		);
 		add_filter( 'woocommerce_payment_gateways', array( GatewayRegistrar::class, 'register' ) );
+		add_action(
+			'woocommerce_blocks_payment_method_type_registration',
+			array( CheckoutBlocksRegistrar::class, 'register' )
+		);
 		( new ManualVerificationController() )->register();
 
 		/**
