@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 require_once __DIR__ . '/Stubs/wpdb.php';
+require_once __DIR__ . '/Stubs/wordpress-functions.php';
 
 spl_autoload_register(
 	static function ( string $class_name ): void {
