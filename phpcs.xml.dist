@@ -28,6 +28,13 @@
 	<rule ref="WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents">
 		<exclude-pattern>tests/*</exclude-pattern>
 	</rule>
+	<rule ref="WordPress.WP.Capabilities">
+		<properties>
+			<property name="custom_capabilities" type="array">
+				<element value="manage_woocommerce"/>
+			</property>
+		</properties>
+	</rule>
 	<rule ref="WordPress.Security.EscapeOutput.ExceptionNotEscaped">
 		<exclude-pattern>src/Infrastructure/*</exclude-pattern>
 	</rule>

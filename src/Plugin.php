@@ -12,6 +12,7 @@ namespace DarajaMpesa;
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
 use DarajaMpesa\Gateway\GatewayRegistrar;
 use DarajaMpesa\Application\ConfigurationFactory;
+use DarajaMpesa\Infrastructure\Admin\ManualVerificationController;
 use DarajaMpesa\Infrastructure\RuntimeFactory;
 use DarajaMpesa\Infrastructure\Scheduling\ActionSchedulerPaymentPollScheduler;
 use InvalidArgumentException;
@@ -75,6 +76,7 @@ final class Plugin {
 			dirname( plugin_basename( DARAJA_MPESA_FILE ) ) . '/languages'
 		);
 		add_filter( 'woocommerce_payment_gateways', array( GatewayRegistrar::class, 'register' ) );
+		( new ManualVerificationController() )->register();
 
 		/**
 		 * Fires after the plugin dependencies have been validated.

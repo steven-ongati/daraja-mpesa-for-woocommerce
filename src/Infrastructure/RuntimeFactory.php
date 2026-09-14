@@ -12,6 +12,7 @@ namespace DarajaMpesa\Infrastructure;
 use DarajaMpesa\Application\CallbackAddress;
 use DarajaMpesa\Application\CallbackPayloadParser;
 use DarajaMpesa\Application\CallbackReconciler;
+use DarajaMpesa\Application\ManualPaymentVerifier;
 use DarajaMpesa\Application\PaymentInitiator;
 use DarajaMpesa\Application\PaymentReviewMarker;
 use DarajaMpesa\Application\PaymentStatusPoller;
@@ -23,6 +24,7 @@ use DarajaMpesa\Infrastructure\Http\WordPressHttpTransport;
 use DarajaMpesa\Infrastructure\Logging\LogContextRedactor;
 use DarajaMpesa\Infrastructure\Logging\WooCommercePaymentLogger;
 use DarajaMpesa\Infrastructure\Persistence\WordPressPaymentAttemptRepository;
+use DarajaMpesa\Infrastructure\Persistence\WordPressManualVerificationAudit;
 use DarajaMpesa\Infrastructure\Rest\CallbackController;
 use DarajaMpesa\Infrastructure\Scheduling\ActionSchedulerPaymentPollScheduler;
 use DarajaMpesa\Support\SystemClock;
@@ -79,6 +81,24 @@ final class RuntimeFactory {
 	 */
 	public function review_marker(): PaymentReviewMarker {
 		return new PaymentReviewMarker( $this->repository() );
+	}
+
+	/**
+	 * Create an audited manual payment verifier.
+	 *
+	 * @param Configuration $configuration Validated merchant configuration.
+	 */
+	public function manual_payment_verifier( Configuration $configuration ): ManualPaymentVerifier {
+		$clock  = new SystemClock();
+		$logger = new WooCommercePaymentLogger( new LogContextRedactor() );
+
+		return new ManualPaymentVerifier(
+			$this->repository(),
+			$this->daraja( $configuration ),
+			new WooCommerceOrderPaymentCompleter(),
+			$this->manual_audit( $clock ),
+			$logger
+		);
 	}
 
 	/**
@@ -139,5 +159,22 @@ final class RuntimeFactory {
 		}
 
 		return new WordPressPaymentAttemptRepository( $wpdb, new SystemClock() );
+	}
+
+	/**
+	 * Create the immutable administrator audit repository.
+	 *
+	 * @param SystemClock $clock Runtime clock.
+	 *
+	 * @throws RuntimeException When WordPress database access is unavailable.
+	 */
+	private function manual_audit( SystemClock $clock ): WordPressManualVerificationAudit {
+		global $wpdb;
+
+		if ( ! $wpdb instanceof wpdb ) {
+			throw new RuntimeException( 'WordPress database access is unavailable.' );
+		}
+
+		return new WordPressManualVerificationAudit( $wpdb, $clock );
 	}
 }
