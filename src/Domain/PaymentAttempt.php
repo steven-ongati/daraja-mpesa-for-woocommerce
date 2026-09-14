@@ -218,7 +218,11 @@ final class PaymentAttempt {
 	 * Move successful but incomplete evidence to administrator review.
 	 */
 	public function require_manual_review(): self {
-		$this->require_state( AttemptState::SUCCEEDED_UNVERIFIED );
+		$this->require_one_of(
+			AttemptState::SUCCEEDED_UNVERIFIED,
+			AttemptState::PENDING,
+			AttemptState::TIMED_OUT
+		);
 
 		return $this->copy( state: AttemptState::MANUAL_REVIEW );
 	}
@@ -238,7 +242,8 @@ final class PaymentAttempt {
 		$this->require_one_of(
 			AttemptState::PENDING,
 			AttemptState::SUCCEEDED_UNVERIFIED,
-			AttemptState::MANUAL_REVIEW
+			AttemptState::MANUAL_REVIEW,
+			AttemptState::TIMED_OUT
 		);
 
 		return $this->copy(
@@ -253,7 +258,12 @@ final class PaymentAttempt {
 	 * Record provider success with the wrong amount.
 	 */
 	public function amount_mismatch(): self {
-		$this->require_one_of( AttemptState::PENDING, AttemptState::SUCCEEDED_UNVERIFIED );
+		$this->require_one_of(
+			AttemptState::PENDING,
+			AttemptState::SUCCEEDED_UNVERIFIED,
+			AttemptState::MANUAL_REVIEW,
+			AttemptState::TIMED_OUT
+		);
 
 		return $this->copy( state: AttemptState::AMOUNT_MISMATCH );
 	}
@@ -262,7 +272,12 @@ final class PaymentAttempt {
 	 * Record receipt evidence already used by another attempt.
 	 */
 	public function duplicate_receipt(): self {
-		$this->require_one_of( AttemptState::PENDING, AttemptState::SUCCEEDED_UNVERIFIED );
+		$this->require_one_of(
+			AttemptState::PENDING,
+			AttemptState::SUCCEEDED_UNVERIFIED,
+			AttemptState::MANUAL_REVIEW,
+			AttemptState::TIMED_OUT
+		);
 
 		return $this->copy( state: AttemptState::DUPLICATE_RECEIPT );
 	}
