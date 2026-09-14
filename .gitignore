@@ -1,0 +1,10 @@
+/.phpunit.cache/
+/.phpunit.result.cache
+/build/
+/coverage/
+/node_modules/
+/vendor/
+*.log
+.env
+.env.*
+!.env.example
