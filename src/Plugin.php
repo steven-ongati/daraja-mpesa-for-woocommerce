@@ -11,6 +11,7 @@ namespace DarajaMpesa;
 
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
 use DarajaMpesa\Gateway\GatewayRegistrar;
+use DarajaMpesa\Infrastructure\RuntimeFactory;
 use DarajaMpesa\Infrastructure\Persistence\PaymentAttemptSchema;
 use DarajaMpesa\Infrastructure\Requirements;
 
@@ -55,6 +56,7 @@ final class Plugin {
 		}
 
 		PaymentAttemptSchema::maybe_upgrade();
+		add_action( 'rest_api_init', array( self::class, 'register_rest_routes' ) );
 
 		load_plugin_textdomain(
 			'daraja-mpesa-for-woocommerce',
@@ -67,5 +69,12 @@ final class Plugin {
 		 * Fires after the plugin dependencies have been validated.
 		 */
 		do_action( 'daraja_mpesa_loaded' );
+	}
+
+	/**
+	 * Register provider-facing REST routes.
+	 */
+	public static function register_rest_routes(): void {
+		( new RuntimeFactory() )->callback_controller()->register();
 	}
 }

@@ -10,6 +10,8 @@ declare(strict_types=1);
 namespace DarajaMpesa\Infrastructure;
 
 use DarajaMpesa\Application\CallbackAddress;
+use DarajaMpesa\Application\CallbackPayloadParser;
+use DarajaMpesa\Application\CallbackReconciler;
 use DarajaMpesa\Application\PaymentInitiator;
 use DarajaMpesa\Infrastructure\Daraja\AccessTokenProvider;
 use DarajaMpesa\Infrastructure\Daraja\Configuration;
@@ -19,6 +21,7 @@ use DarajaMpesa\Infrastructure\Http\WordPressHttpTransport;
 use DarajaMpesa\Infrastructure\Logging\LogContextRedactor;
 use DarajaMpesa\Infrastructure\Logging\WooCommercePaymentLogger;
 use DarajaMpesa\Infrastructure\Persistence\WordPressPaymentAttemptRepository;
+use DarajaMpesa\Infrastructure\Rest\CallbackController;
 use DarajaMpesa\Support\SystemClock;
 use DarajaMpesa\Support\WordPressAttemptIdGenerator;
 use RuntimeException;
@@ -29,6 +32,30 @@ use wpdb;
  */
 final class RuntimeFactory {
 	/**
+	 * Create the authenticated callback controller.
+	 *
+	 * @throws RuntimeException When WordPress database access is unavailable.
+	 */
+	public function callback_controller(): CallbackController {
+		$repository = $this->repository();
+		$logger     = new WooCommercePaymentLogger( new LogContextRedactor() );
+		$secret     = wp_salt( 'auth' );
+
+		return new CallbackController(
+			new CallbackAddress(),
+			new CallbackPayloadParser(),
+			new CallbackReconciler(
+				$repository,
+				new WooCommerceOrderPaymentCompleter(),
+				$logger,
+				$secret
+			),
+			$logger,
+			$secret
+		);
+	}
+
+	/**
 	 * Create a configured payment initiator.
 	 *
 	 * @param Configuration $configuration Validated merchant configuration.
@@ -36,15 +63,9 @@ final class RuntimeFactory {
 	 * @throws RuntimeException When WordPress database access is unavailable.
 	 */
 	public function payment_initiator( Configuration $configuration ): PaymentInitiator {
-		global $wpdb;
-
-		if ( ! $wpdb instanceof wpdb ) {
-			throw new RuntimeException( 'WordPress database access is unavailable.' );
-		}
-
 		$clock      = new SystemClock();
 		$transport  = new WordPressHttpTransport();
-		$repository = new WordPressPaymentAttemptRepository( $wpdb, $clock );
+		$repository = $this->repository();
 		$logger     = new WooCommercePaymentLogger( new LogContextRedactor() );
 		$daraja     = new DarajaClient(
 			$configuration,
@@ -66,5 +87,20 @@ final class RuntimeFactory {
 			rest_url( 'daraja-mpesa/v1/callback' ),
 			wp_salt( 'auth' )
 		);
+	}
+
+	/**
+	 * Create the durable payment-attempt repository.
+	 *
+	 * @throws RuntimeException When WordPress database access is unavailable.
+	 */
+	private function repository(): WordPressPaymentAttemptRepository {
+		global $wpdb;
+
+		if ( ! $wpdb instanceof wpdb ) {
+			throw new RuntimeException( 'WordPress database access is unavailable.' );
+		}
+
+		return new WordPressPaymentAttemptRepository( $wpdb, new SystemClock() );
 	}
 }
