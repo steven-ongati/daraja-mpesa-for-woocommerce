@@ -46,6 +46,7 @@ final class Plugin {
 	public static function declare_compatibility(): void {
 		if ( class_exists( FeaturesUtil::class ) ) {
 			FeaturesUtil::declare_compatibility( 'custom_order_tables', DARAJA_MPESA_FILE, true );
+			FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', DARAJA_MPESA_FILE, true );
 		}
 	}
 
