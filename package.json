@@ -1,0 +1,22 @@
+{
+  "name": "daraja-mpesa-for-woocommerce",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Checkout Blocks and customer payment status assets.",
+  "license": "GPL-2.0-or-later",
+  "author": "Steven Ongati Moriasi",
+  "scripts": {
+    "lint:js": "eslint .",
+    "audit": "npm audit --audit-level=high"
+  },
+  "devDependencies": {
+    "@wordpress/eslint-plugin": "25.10.0",
+    "eslint": "9.39.5",
+    "prettier": "3.9.6",
+    "typescript": "6.0.3"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  }
+}

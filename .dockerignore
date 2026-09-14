@@ -1,0 +1,6 @@
+.git
+.phpunit.cache
+build
+coverage
+node_modules
+vendor

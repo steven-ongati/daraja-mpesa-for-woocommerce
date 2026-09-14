@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<ruleset name="Daraja M-Pesa">
+	<description>WordPress coding standards for the Daraja M-Pesa plugin.</description>
+
+	<file>daraja-mpesa-for-woocommerce.php</file>
+	<file>src</file>
+	<file>tests</file>
+	<file>uninstall.php</file>
+
+	<exclude-pattern>vendor/*</exclude-pattern>
+
+	<arg name="basepath" value="."/>
+	<arg name="colors"/>
+	<arg value="sp"/>
+	<arg name="extensions" value="php"/>
+
+	<rule ref="WordPress">
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+		<exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+	</rule>
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="daraja-mpesa-for-woocommerce"/>
+			</property>
+		</properties>
+	</rule>
+	<rule ref="WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+	<config name="minimum_supported_wp_version" value="6.8"/>
+</ruleset>

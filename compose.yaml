@@ -1,0 +1,15 @@
+services:
+  php:
+    build:
+      context: .
+    environment:
+      COMPOSER_ROOT_VERSION: 0.1.0
+    working_dir: /plugin
+    volumes:
+      - .:/plugin
+
+  node:
+    image: node:22.22.2-bookworm-slim
+    working_dir: /plugin
+    volumes:
+      - .:/plugin

@@ -1,0 +1,16 @@
+parameters:
+  level: 8
+  paths:
+    - daraja-mpesa-for-woocommerce.php
+    - src
+    - uninstall.php
+  scanFiles:
+    - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+    - vendor/php-stubs/woocommerce-stubs/woocommerce-stubs.php
+  excludePaths:
+    analyse:
+      - vendor
+  treatPhpDocTypesAsCertain: false
+  reportUnmatchedIgnoredErrors: true
+  parallel:
+    maximumNumberOfProcesses: 1

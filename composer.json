@@ -1,0 +1,49 @@
+{
+  "name": "steven-ongati/daraja-mpesa-for-woocommerce",
+  "description": "Direct Safaricom Daraja STK Push payments with durable WooCommerce reconciliation.",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "authors": [
+    {
+      "name": "Steven Ongati Moriasi",
+      "email": "ongatisteven@gmail.com"
+    }
+  ],
+  "require": {
+    "php": "^8.1"
+  },
+  "require-dev": {
+    "dealerdirect/phpcodesniffer-composer-installer": "1.2.1",
+    "php-stubs/woocommerce-stubs": "11.1.0",
+    "php-stubs/wordpress-stubs": "7.1.0",
+    "phpstan/phpstan": "2.2.13",
+    "phpunit/phpunit": "10.5.64",
+    "squizlabs/php_codesniffer": "3.13.6",
+    "wp-coding-standards/wpcs": "3.4.1"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "DarajaMpesa\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    },
+    "platform": {
+      "php": "8.1.0"
+    },
+    "sort-packages": true
+  },
+  "scripts": {
+    "check": [
+      "@lint",
+      "@analyse",
+      "@test"
+    ],
+    "lint": "phpcs",
+    "lint:fix": "phpcbf",
+    "analyse": "phpstan analyse --memory-limit=1G",
+    "test": "phpunit"
+  }
+}
