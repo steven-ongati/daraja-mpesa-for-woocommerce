@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace DarajaMpesa;
 
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
+use DarajaMpesa\Gateway\GatewayRegistrar;
 use DarajaMpesa\Infrastructure\Persistence\PaymentAttemptSchema;
 use DarajaMpesa\Infrastructure\Requirements;
 
@@ -60,6 +61,7 @@ final class Plugin {
 			false,
 			dirname( plugin_basename( DARAJA_MPESA_FILE ) ) . '/languages'
 		);
+		add_filter( 'woocommerce_payment_gateways', array( GatewayRegistrar::class, 'register' ) );
 
 		/**
 		 * Fires after the plugin dependencies have been validated.
