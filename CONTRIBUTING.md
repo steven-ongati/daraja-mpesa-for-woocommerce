@@ -16,6 +16,18 @@ Project commands run in containers so contributors do not need host PHP, Compose
 
 Never commit credentials, callback payloads containing personal data, access tokens, or merchant certificates.
 
+## Release validation
+
+Run:
+
+```bash
+make release
+```
+
+The release target runs PHP quality checks, JavaScript lint, the Node dependency audit, creates the installable ZIP, validates its allowlist, checks packaged PHP syntax, and verifies the SHA-256 checksum.
+
+Inspect `build/archive-contents.txt` before publishing. The archive must contain only the plugin bootstrap, uninstall handler, WordPress readme, license, browser assets, and runtime source. It must not contain tests, development dependencies, credentials, local environment files, or build tooling.
+
 ## Compatibility claims
 
 Do not update “Tested up to” metadata based only on source inspection. Add the WordPress/WooCommerce combination to the compatibility test matrix and retain its passing evidence.
