@@ -18,7 +18,7 @@ use JsonException;
 /**
  * Initiates STK Push requests and queries their provider status.
  */
-final class DarajaClient {
+final class DarajaClient implements DarajaGateway {
 	/**
 	 * Configure M-Pesa Express access.
 	 *
