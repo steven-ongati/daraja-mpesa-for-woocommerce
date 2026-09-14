@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace DarajaMpesa;
 
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
+use DarajaMpesa\Infrastructure\Persistence\PaymentAttemptSchema;
 use DarajaMpesa\Infrastructure\Requirements;
 
 /**
@@ -28,6 +29,7 @@ final class Plugin {
 	 * Prepare persistent plugin resources.
 	 */
 	public static function activate(): void {
+		PaymentAttemptSchema::install();
 		update_option( 'daraja_mpesa_version', DARAJA_MPESA_VERSION, false );
 	}
 
@@ -50,6 +52,8 @@ final class Plugin {
 			add_action( 'admin_notices', array( $requirements, 'render_admin_notice' ) );
 			return;
 		}
+
+		PaymentAttemptSchema::maybe_upgrade();
 
 		load_plugin_textdomain(
 			'daraja-mpesa-for-woocommerce',

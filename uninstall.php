@@ -8,3 +8,4 @@
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
 delete_option( 'daraja_mpesa_version' );
+delete_option( 'daraja_mpesa_schema_version' );
