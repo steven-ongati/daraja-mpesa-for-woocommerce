@@ -12,10 +12,9 @@ namespace DarajaMpesa\Gateway;
 use DarajaMpesa\Application\ConfigurationFactory;
 use DarajaMpesa\Domain\KenyanPhoneNumber;
 use DarajaMpesa\Infrastructure\Daraja\DarajaApiException;
-use DarajaMpesa\Infrastructure\Persistence\ConcurrentAttemptUpdate;
-use DarajaMpesa\Infrastructure\Persistence\PaymentAttemptPersistenceException;
 use DarajaMpesa\Infrastructure\RuntimeFactory;
 use InvalidArgumentException;
+use RuntimeException;
 use WC_Order;
 use WC_Payment_Gateway;
 
@@ -173,18 +172,23 @@ final class DarajaMpesaGateway extends WC_Payment_Gateway {
 		}
 
 		try {
+			$runtime = new RuntimeFactory();
+			if ( ! $runtime->payment_retry_policy()->may_start( $order->get_meta( '_daraja_mpesa_attempt_id', true ) ) ) {
+				wc_add_notice(
+					__( 'A previous M-Pesa request is still being verified. Refresh the order status or contact the store before trying again.', 'daraja-mpesa-for-woocommerce' ),
+					'error'
+				);
+
+				return $this->failure_result();
+			}
+
 			$configuration = ( new ConfigurationFactory() )->from_settings( $this->merchant_settings() );
-			$attempt       = ( new RuntimeFactory() )->payment_initiator( $configuration )->start(
+			$attempt       = $runtime->payment_initiator( $configuration )->start(
 				$order->get_id(),
 				(string) $order->get_total(),
 				$this->posted_phone()
 			);
-		} catch (
-			InvalidArgumentException
-			| DarajaApiException
-			| ConcurrentAttemptUpdate
-			| PaymentAttemptPersistenceException $exception
-		) {
+		} catch ( InvalidArgumentException | RuntimeException $exception ) {
 			wc_add_notice( $this->customer_error( $exception ), 'error' );
 
 			return $this->failure_result();
@@ -283,10 +287,10 @@ final class DarajaMpesaGateway extends WC_Payment_Gateway {
 	/**
 	 * Map safe provider errors to actionable customer messages.
 	 *
-	 * @param InvalidArgumentException|DarajaApiException|ConcurrentAttemptUpdate|PaymentAttemptPersistenceException $exception Safe payment exception.
+	 * @param InvalidArgumentException|RuntimeException $exception Safe payment exception.
 	 */
 	private function customer_error(
-		InvalidArgumentException|DarajaApiException|ConcurrentAttemptUpdate|PaymentAttemptPersistenceException $exception
+		InvalidArgumentException|RuntimeException $exception
 	): string {
 		if ( $exception instanceof DarajaApiException && $exception->is_retryable() ) {
 			return __( 'M-Pesa is temporarily unavailable. Please try again.', 'daraja-mpesa-for-woocommerce' );

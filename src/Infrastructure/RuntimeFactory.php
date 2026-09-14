@@ -16,6 +16,7 @@ use DarajaMpesa\Application\CustomerPaymentStatusReader;
 use DarajaMpesa\Application\ManualPaymentVerifier;
 use DarajaMpesa\Application\PaymentInitiator;
 use DarajaMpesa\Application\PaymentReviewMarker;
+use DarajaMpesa\Application\PaymentRetryPolicy;
 use DarajaMpesa\Application\PaymentStatusPoller;
 use DarajaMpesa\Infrastructure\Daraja\AccessTokenProvider;
 use DarajaMpesa\Infrastructure\Daraja\Configuration;
@@ -92,6 +93,13 @@ final class RuntimeFactory {
 	 */
 	public function review_marker(): PaymentReviewMarker {
 		return new PaymentReviewMarker( $this->repository() );
+	}
+
+	/**
+	 * Create the order retry policy.
+	 */
+	public function payment_retry_policy(): PaymentRetryPolicy {
+		return new PaymentRetryPolicy( $this->repository() );
 	}
 
 	/**
