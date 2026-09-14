@@ -32,4 +32,16 @@ function add_query_arg( array $parameters, string $url ): string {
 
 	return $url . $separator . http_build_query( $parameters, '', '&', PHP_QUERY_RFC3986 );
 }
+
+/**
+ * Test-compatible translation implementation.
+ *
+ * @param string $text   Translation source.
+ * @param string $domain Translation domain.
+ */
+function __( string $text, string $domain = 'default' ): string {
+	unset( $domain );
+
+	return $text;
+}
 // phpcs:enable

@@ -82,6 +82,7 @@ final class Plugin {
 			array( CheckoutBlocksRegistrar::class, 'register' )
 		);
 		( new ManualVerificationController() )->register();
+		( new RuntimeFactory() )->customer_status_controller()->register();
 
 		/**
 		 * Fires after the plugin dependencies have been validated.

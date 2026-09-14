@@ -12,6 +12,7 @@ namespace DarajaMpesa\Infrastructure;
 use DarajaMpesa\Application\CallbackAddress;
 use DarajaMpesa\Application\CallbackPayloadParser;
 use DarajaMpesa\Application\CallbackReconciler;
+use DarajaMpesa\Application\CustomerPaymentStatusReader;
 use DarajaMpesa\Application\ManualPaymentVerifier;
 use DarajaMpesa\Application\PaymentInitiator;
 use DarajaMpesa\Application\PaymentReviewMarker;
@@ -26,6 +27,7 @@ use DarajaMpesa\Infrastructure\Logging\WooCommercePaymentLogger;
 use DarajaMpesa\Infrastructure\Persistence\WordPressPaymentAttemptRepository;
 use DarajaMpesa\Infrastructure\Persistence\WordPressManualVerificationAudit;
 use DarajaMpesa\Infrastructure\Rest\CallbackController;
+use DarajaMpesa\Infrastructure\Rest\CustomerPaymentStatusController;
 use DarajaMpesa\Infrastructure\Scheduling\ActionSchedulerPaymentPollScheduler;
 use DarajaMpesa\Support\SystemClock;
 use DarajaMpesa\Support\WordPressAttemptIdGenerator;
@@ -57,6 +59,15 @@ final class RuntimeFactory {
 			),
 			$logger,
 			$secret
+		);
+	}
+
+	/**
+	 * Create the customer-safe local status controller.
+	 */
+	public function customer_status_controller(): CustomerPaymentStatusController {
+		return new CustomerPaymentStatusController(
+			new CustomerPaymentStatusReader( $this->repository() )
 		);
 	}
 
