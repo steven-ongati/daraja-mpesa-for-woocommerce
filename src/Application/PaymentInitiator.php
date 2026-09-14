@@ -28,6 +28,7 @@ final class PaymentInitiator {
 	 * @param PaymentAttemptRepository $repository       Durable attempt repository.
 	 * @param DarajaGateway            $daraja           Daraja provider client.
 	 * @param PaymentLogger            $logger           Redacted event logger.
+	 * @param PaymentPollScheduler     $scheduler        Durable reconciliation scheduler.
 	 * @param AttemptIdGenerator       $id_generator     Attempt UUID generator.
 	 * @param CallbackAddress          $callback_address Callback URL protector.
 	 * @param string                   $callback_endpoint Public callback endpoint.
@@ -37,6 +38,7 @@ final class PaymentInitiator {
 		private readonly PaymentAttemptRepository $repository,
 		private readonly DarajaGateway $daraja,
 		private readonly PaymentLogger $logger,
+		private readonly PaymentPollScheduler $scheduler,
 		private readonly AttemptIdGenerator $id_generator,
 		private readonly CallbackAddress $callback_address,
 		private readonly string $callback_endpoint,
@@ -102,6 +104,7 @@ final class PaymentInitiator {
 			$result->checkout_request_id()
 		);
 		$this->repository->save( $initiating, $pending );
+		$this->scheduler->schedule_poll( $pending->attempt_id(), 30 );
 		$this->logger->info(
 			'payment.stk_push_accepted',
 			array(

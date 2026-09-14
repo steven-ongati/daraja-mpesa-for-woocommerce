@@ -18,6 +18,7 @@ use DarajaMpesa\Infrastructure\Daraja\StkPushResult;
 use DarajaMpesa\Tests\Doubles\InMemoryPaymentAttemptRepository;
 use DarajaMpesa\Tests\Doubles\RecordingDarajaGateway;
 use DarajaMpesa\Tests\Doubles\RecordingPaymentLogger;
+use DarajaMpesa\Tests\Doubles\RecordingPaymentPollScheduler;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -35,7 +36,8 @@ final class PaymentInitiatorTest extends TestCase {
 			new StkPushResult( 'merchant-123', 'ws_CO_12345678', 'Check your phone' )
 		);
 		$logger     = new RecordingPaymentLogger();
-		$initiator  = $this->initiator( $repository, $daraja, $logger );
+		$scheduler  = new RecordingPaymentPollScheduler();
+		$initiator  = $this->initiator( $repository, $daraja, $logger, $scheduler );
 
 		$attempt = $initiator->start( 123, '2500.00', '0712345678' );
 
@@ -49,6 +51,7 @@ final class PaymentInitiatorTest extends TestCase {
 		);
 		self::assertSame( $attempt, $repository->find_by_attempt_id( self::ATTEMPT_ID ) );
 		self::assertSame( 'payment.stk_push_accepted', $logger->events[0]['event'] );
+		self::assertSame( self::ATTEMPT_ID, $scheduler->poll()['attempt_id'] ?? null );
 	}
 
 	/**
@@ -59,7 +62,12 @@ final class PaymentInitiatorTest extends TestCase {
 		$exception  = new DarajaApiException( 'Daraja is unavailable.', 'stk_push_transport_error', true );
 		$daraja     = new RecordingDarajaGateway( $exception );
 		$logger     = new RecordingPaymentLogger();
-		$initiator  = $this->initiator( $repository, $daraja, $logger );
+		$initiator  = $this->initiator(
+			$repository,
+			$daraja,
+			$logger,
+			new RecordingPaymentPollScheduler()
+		);
 
 		try {
 			$initiator->start( 123, 2500, '254712345678' );
@@ -83,11 +91,13 @@ final class PaymentInitiatorTest extends TestCase {
 	 * @param InMemoryPaymentAttemptRepository $repository Attempt repository.
 	 * @param RecordingDarajaGateway           $daraja     Provider gateway.
 	 * @param RecordingPaymentLogger           $logger     Event logger.
+	 * @param RecordingPaymentPollScheduler    $scheduler  Reconciliation scheduler.
 	 */
 	private function initiator(
 		InMemoryPaymentAttemptRepository $repository,
 		RecordingDarajaGateway $daraja,
-		RecordingPaymentLogger $logger
+		RecordingPaymentLogger $logger,
+		RecordingPaymentPollScheduler $scheduler
 	): PaymentInitiator {
 		$generator = new class(self::ATTEMPT_ID) implements AttemptIdGenerator {
 			/**
@@ -112,6 +122,7 @@ final class PaymentInitiatorTest extends TestCase {
 			$repository,
 			$daraja,
 			$logger,
+			$scheduler,
 			$generator,
 			new CallbackAddress(),
 			'https://store.example/wp-json/daraja-mpesa/v1/callback',

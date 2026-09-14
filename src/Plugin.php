@@ -11,7 +11,10 @@ namespace DarajaMpesa;
 
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
 use DarajaMpesa\Gateway\GatewayRegistrar;
+use DarajaMpesa\Application\ConfigurationFactory;
 use DarajaMpesa\Infrastructure\RuntimeFactory;
+use DarajaMpesa\Infrastructure\Scheduling\ActionSchedulerPaymentPollScheduler;
+use InvalidArgumentException;
 use DarajaMpesa\Infrastructure\Persistence\PaymentAttemptSchema;
 use DarajaMpesa\Infrastructure\Requirements;
 
@@ -57,6 +60,14 @@ final class Plugin {
 
 		PaymentAttemptSchema::maybe_upgrade();
 		add_action( 'rest_api_init', array( self::class, 'register_rest_routes' ) );
+		add_action(
+			ActionSchedulerPaymentPollScheduler::POLL_HOOK,
+			array( self::class, 'poll_payment_attempt' )
+		);
+		add_action(
+			ActionSchedulerPaymentPollScheduler::REVIEW_HOOK,
+			array( self::class, 'review_payment_attempt' )
+		);
 
 		load_plugin_textdomain(
 			'daraja-mpesa-for-woocommerce',
@@ -76,5 +87,34 @@ final class Plugin {
 	 */
 	public static function register_rest_routes(): void {
 		( new RuntimeFactory() )->callback_controller()->register();
+	}
+
+	/**
+	 * Query Daraja for one pending payment attempt.
+	 *
+	 * @param string $attempt_id Payment attempt identifier.
+	 */
+	public static function poll_payment_attempt( string $attempt_id ): void {
+		$settings = get_option( 'woocommerce_daraja_mpesa_settings', array() );
+		if ( ! is_array( $settings ) ) {
+			return;
+		}
+
+		try {
+			$configuration = ( new ConfigurationFactory() )->from_settings( $settings );
+		} catch ( InvalidArgumentException ) {
+			return;
+		}
+
+		( new RuntimeFactory() )->payment_poller( $configuration )->poll( $attempt_id );
+	}
+
+	/**
+	 * Move callback-less provider success to administrator review.
+	 *
+	 * @param string $attempt_id Payment attempt identifier.
+	 */
+	public static function review_payment_attempt( string $attempt_id ): void {
+		( new RuntimeFactory() )->review_marker()->mark( $attempt_id );
 	}
 }

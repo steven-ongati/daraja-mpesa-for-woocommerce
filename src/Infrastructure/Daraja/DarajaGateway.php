@@ -17,6 +17,8 @@ interface DarajaGateway {
 	 * Initiate a customer STK Push.
 	 *
 	 * @param StkPushRequest $request Validated payment request.
+	 *
+	 * @throws DarajaApiException When provider initiation fails.
 	 */
 	public function push( StkPushRequest $request ): StkPushResult;
 
@@ -24,6 +26,8 @@ interface DarajaGateway {
 	 * Query an existing STK Push.
 	 *
 	 * @param string $checkout_request_id Immutable provider checkout identifier.
+	 *
+	 * @throws DarajaApiException When the provider query fails.
 	 */
 	public function query( string $checkout_request_id ): StkQueryResult;
 }

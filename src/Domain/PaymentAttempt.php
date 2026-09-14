@@ -215,6 +215,19 @@ final class PaymentAttempt {
 	}
 
 	/**
+	 * Stop polling without treating timeout as payment.
+	 */
+	public function poll_timed_out(): self {
+		$this->require_state( AttemptState::PENDING );
+
+		return $this->copy(
+			state: AttemptState::TIMED_OUT,
+			failure_code: 'poll_exhausted',
+			poll_count: $this->poll_count + 1
+		);
+	}
+
+	/**
 	 * Move successful but incomplete evidence to administrator review.
 	 */
 	public function require_manual_review(): self {

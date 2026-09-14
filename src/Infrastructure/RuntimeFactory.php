@@ -13,6 +13,8 @@ use DarajaMpesa\Application\CallbackAddress;
 use DarajaMpesa\Application\CallbackPayloadParser;
 use DarajaMpesa\Application\CallbackReconciler;
 use DarajaMpesa\Application\PaymentInitiator;
+use DarajaMpesa\Application\PaymentReviewMarker;
+use DarajaMpesa\Application\PaymentStatusPoller;
 use DarajaMpesa\Infrastructure\Daraja\AccessTokenProvider;
 use DarajaMpesa\Infrastructure\Daraja\Configuration;
 use DarajaMpesa\Infrastructure\Daraja\DarajaClient;
@@ -22,6 +24,7 @@ use DarajaMpesa\Infrastructure\Logging\LogContextRedactor;
 use DarajaMpesa\Infrastructure\Logging\WooCommercePaymentLogger;
 use DarajaMpesa\Infrastructure\Persistence\WordPressPaymentAttemptRepository;
 use DarajaMpesa\Infrastructure\Rest\CallbackController;
+use DarajaMpesa\Infrastructure\Scheduling\ActionSchedulerPaymentPollScheduler;
 use DarajaMpesa\Support\SystemClock;
 use DarajaMpesa\Support\WordPressAttemptIdGenerator;
 use RuntimeException;
@@ -56,6 +59,29 @@ final class RuntimeFactory {
 	}
 
 	/**
+	 * Create a configured status poller.
+	 *
+	 * @param Configuration $configuration Validated merchant configuration.
+	 */
+	public function payment_poller( Configuration $configuration ): PaymentStatusPoller {
+		$logger = new WooCommercePaymentLogger( new LogContextRedactor() );
+
+		return new PaymentStatusPoller(
+			$this->repository(),
+			$this->daraja( $configuration ),
+			new ActionSchedulerPaymentPollScheduler(),
+			$logger
+		);
+	}
+
+	/**
+	 * Create the callback-less success review marker.
+	 */
+	public function review_marker(): PaymentReviewMarker {
+		return new PaymentReviewMarker( $this->repository() );
+	}
+
+	/**
 	 * Create a configured payment initiator.
 	 *
 	 * @param Configuration $configuration Validated merchant configuration.
@@ -63,11 +89,32 @@ final class RuntimeFactory {
 	 * @throws RuntimeException When WordPress database access is unavailable.
 	 */
 	public function payment_initiator( Configuration $configuration ): PaymentInitiator {
-		$clock      = new SystemClock();
-		$transport  = new WordPressHttpTransport();
 		$repository = $this->repository();
 		$logger     = new WooCommercePaymentLogger( new LogContextRedactor() );
-		$daraja     = new DarajaClient(
+		$daraja     = $this->daraja( $configuration );
+
+		return new PaymentInitiator(
+			$repository,
+			$daraja,
+			$logger,
+			new ActionSchedulerPaymentPollScheduler(),
+			new WordPressAttemptIdGenerator(),
+			new CallbackAddress(),
+			rest_url( 'daraja-mpesa/v1/callback' ),
+			wp_salt( 'auth' )
+		);
+	}
+
+	/**
+	 * Create a configured Daraja client.
+	 *
+	 * @param Configuration $configuration Validated merchant configuration.
+	 */
+	private function daraja( Configuration $configuration ): DarajaClient {
+		$clock     = new SystemClock();
+		$transport = new WordPressHttpTransport();
+
+		return new DarajaClient(
 			$configuration,
 			new AccessTokenProvider(
 				$configuration,
@@ -76,16 +123,6 @@ final class RuntimeFactory {
 			),
 			$transport,
 			$clock
-		);
-
-		return new PaymentInitiator(
-			$repository,
-			$daraja,
-			$logger,
-			new WordPressAttemptIdGenerator(),
-			new CallbackAddress(),
-			rest_url( 'daraja-mpesa/v1/callback' ),
-			wp_salt( 'auth' )
 		);
 	}
 

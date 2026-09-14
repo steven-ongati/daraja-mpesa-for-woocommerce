@@ -28,6 +28,13 @@ final class RecordingDarajaGateway implements DarajaGateway {
 	public ?StkPushRequest $request = null;
 
 	/**
+	 * Configured status-query outcome.
+	 *
+	 * @var StkQueryResult|DarajaApiException|null
+	 */
+	private StkQueryResult|DarajaApiException|null $query_result = null;
+
+	/**
 	 * Create a configured gateway.
 	 *
 	 * @param StkPushResult|DarajaApiException $push_result Push outcome.
@@ -55,15 +62,32 @@ final class RecordingDarajaGateway implements DarajaGateway {
 	}
 
 	/**
-	 * Status querying is not needed by initiation tests.
+	 * Return the configured status-query outcome.
 	 *
 	 * @param string $checkout_request_id Immutable provider checkout identifier.
 	 *
-	 * @throws LogicException Always, because no query result is configured.
+	 * @throws LogicException When no query result is configured.
 	 */
 	public function query( string $checkout_request_id ): StkQueryResult {
 		unset( $checkout_request_id );
 
-		throw new LogicException( 'No query result was configured.' );
+		if ( null === $this->query_result ) {
+			throw new LogicException( 'No query result was configured.' );
+		}
+
+		if ( $this->query_result instanceof DarajaApiException ) {
+			throw $this->query_result;
+		}
+
+		return $this->query_result;
+	}
+
+	/**
+	 * Configure a status-query outcome.
+	 *
+	 * @param StkQueryResult|DarajaApiException $result Query outcome.
+	 */
+	public function query_result( StkQueryResult|DarajaApiException $result ): void {
+		$this->query_result = $result;
 	}
 }
