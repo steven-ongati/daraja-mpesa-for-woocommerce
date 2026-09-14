@@ -24,11 +24,39 @@ final class InMemoryOrderPaymentCompleter implements OrderPaymentCompleter {
 	private ?array $completed = null;
 
 	/**
+	 * Active order attempt, or null before initial order linking.
+	 *
+	 * @var ?string
+	 */
+	private ?string $current_attempt = null;
+
+	/**
 	 * Configure the current order total.
 	 *
 	 * @param KesAmount $amount Current order amount.
 	 */
 	public function __construct( private readonly KesAmount $amount ) {
+	}
+
+	/**
+	 * Whether an attempt is still the order's active request.
+	 *
+	 * @param int    $order_id   WooCommerce order identifier.
+	 * @param string $attempt_id Payment attempt identifier.
+	 */
+	public function is_current_attempt( int $order_id, string $attempt_id ): bool {
+		unset( $order_id );
+
+		return null === $this->current_attempt || $attempt_id === $this->current_attempt;
+	}
+
+	/**
+	 * Configure the active order attempt.
+	 *
+	 * @param string $attempt_id Active payment attempt identifier.
+	 */
+	public function set_current_attempt( string $attempt_id ): void {
+		$this->current_attempt = $attempt_id;
 	}
 
 	/**

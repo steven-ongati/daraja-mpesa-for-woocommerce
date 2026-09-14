@@ -69,6 +69,27 @@ final class CallbackReconcilerTest extends TestCase {
 	}
 
 	/**
+	 * A late callback cannot settle after a new payment attempt becomes active.
+	 */
+	public function test_superseded_attempt_requires_review_without_completing_order(): void {
+		$repository = new InMemoryPaymentAttemptRepository();
+		$this->pending_attempt( $repository, 1250 );
+		$orders = new InMemoryOrderPaymentCompleter( new KesAmount( 1250 ) );
+		$orders->set_current_attempt( 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee' );
+		$reconciler = new CallbackReconciler(
+			$repository,
+			$orders,
+			new RecordingPaymentLogger(),
+			self::SECRET
+		);
+
+		$updated = $reconciler->reconcile( self::ATTEMPT_ID, $this->success_payload( 1250 ) );
+
+		self::assertSame( AttemptState::MANUAL_REVIEW, $updated->state() );
+		self::assertNull( $orders->completed() );
+	}
+
+	/**
 	 * Create and persist a pending payment attempt.
 	 *
 	 * @param InMemoryPaymentAttemptRepository $repository Attempt repository.
@@ -78,15 +99,17 @@ final class CallbackReconcilerTest extends TestCase {
 		InMemoryPaymentAttemptRepository $repository,
 		int $amount
 	): PaymentAttempt {
-		$created = PaymentAttempt::create(
+		$created    = PaymentAttempt::create(
 			self::ATTEMPT_ID,
 			91,
 			new KesAmount( $amount ),
 			hash_hmac( 'sha256', '254712345678', self::SECRET )
 		);
-		$created = $repository->add( $created );
-		$pending = $created->initiating()->pending( 'merchant_123', 'checkout_123' );
-		$repository->save( $created, $pending );
+		$created    = $repository->add( $created );
+		$initiating = $created->initiating();
+		$repository->save( $created, $initiating );
+		$pending = $initiating->pending( 'merchant_123', 'checkout_123' );
+		$repository->save( $initiating, $pending );
 
 		return $pending;
 	}

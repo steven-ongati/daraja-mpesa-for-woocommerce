@@ -16,6 +16,14 @@ use DarajaMpesa\Domain\KesAmount;
  */
 interface OrderPaymentCompleter {
 	/**
+	 * Whether an attempt is still the order's active payment request.
+	 *
+	 * @param int    $order_id   WooCommerce order identifier.
+	 * @param string $attempt_id Immutable payment attempt identifier.
+	 */
+	public function is_current_attempt( int $order_id, string $attempt_id ): bool;
+
+	/**
 	 * Return the order's current exact total.
 	 *
 	 * @param int $order_id WooCommerce order identifier.

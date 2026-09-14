@@ -95,6 +95,36 @@ final class ManualPaymentVerifierTest extends TestCase {
 	}
 
 	/**
+	 * An administrator cannot settle an attempt superseded by a newer request.
+	 */
+	public function test_rejects_superseded_attempt(): void {
+		$repository = new InMemoryPaymentAttemptRepository();
+		$this->reviewable_attempt( $repository );
+		$orders = new InMemoryOrderPaymentCompleter( new KesAmount( 1250 ) );
+		$orders->set_current_attempt( 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee' );
+		$audit   = new InMemoryManualVerificationAudit();
+		$service = new ManualPaymentVerifier(
+			$repository,
+			new RecordingDarajaGateway(
+				new StkPushResult( 'merchant_123', 'checkout_123', 'accepted' )
+			),
+			$orders,
+			$audit,
+			new RecordingPaymentLogger()
+		);
+
+		try {
+			$service->verify( $this->request( 1250, 'ABC123XYZ9' ) );
+			self::fail( 'A superseded attempt should not settle.' );
+		} catch ( ManualVerificationRejected $exception ) {
+			self::assertSame( 'superseded_attempt', $exception->error_code() );
+		}
+
+		self::assertSame( 'superseded_attempt', $audit->latest() );
+		self::assertNull( $orders->completed() );
+	}
+
+	/**
 	 * Build administrator evidence.
 	 *
 	 * @param int    $amount  Externally observed amount.

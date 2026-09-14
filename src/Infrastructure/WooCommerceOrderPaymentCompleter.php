@@ -19,6 +19,20 @@ use WC_Order;
  */
 final class WooCommerceOrderPaymentCompleter implements OrderPaymentCompleter {
 	/**
+	 * Whether an attempt is still the order's active payment request.
+	 *
+	 * @param int    $order_id   WooCommerce order identifier.
+	 * @param string $attempt_id Immutable payment attempt identifier.
+	 */
+	public function is_current_attempt( int $order_id, string $attempt_id ): bool {
+		$current_attempt = $this->order( $order_id )->get_meta( '_daraja_mpesa_attempt_id', true );
+
+		return ! is_string( $current_attempt )
+			|| '' === $current_attempt
+			|| hash_equals( $current_attempt, $attempt_id );
+	}
+
+	/**
 	 * Return the order's current exact total.
 	 *
 	 * @param int $order_id WooCommerce order identifier.

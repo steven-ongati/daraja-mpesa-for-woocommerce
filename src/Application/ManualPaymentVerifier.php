@@ -51,6 +51,10 @@ final class ManualPaymentVerifier {
 			$this->reject( $request, 'attempt_not_found' );
 		}
 
+		if ( ! $this->orders->is_current_attempt( $attempt->order_id(), $attempt->attempt_id() ) ) {
+			$this->reject( $request, 'superseded_attempt' );
+		}
+
 		if ( AttemptState::SETTLED === $attempt->state() ) {
 			if ( $attempt->receipt_number() !== $request->receipt() ) {
 				$this->reject( $request, 'settled_receipt_conflict' );

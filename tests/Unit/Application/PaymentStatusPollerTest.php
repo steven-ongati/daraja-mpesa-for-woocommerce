@@ -88,14 +88,16 @@ final class PaymentStatusPollerTest extends TestCase {
 	 * @param InMemoryPaymentAttemptRepository $repository Attempt repository.
 	 */
 	private function pending_attempt( InMemoryPaymentAttemptRepository $repository ): void {
-		$created = PaymentAttempt::create(
+		$created    = PaymentAttempt::create(
 			self::ATTEMPT_ID,
 			91,
 			new KesAmount( 1250 ),
 			hash( 'sha256', 'phone' )
 		);
-		$created = $repository->add( $created );
-		$pending = $created->initiating()->pending( 'merchant_123', 'checkout_123' );
-		$repository->save( $created, $pending );
+		$created    = $repository->add( $created );
+		$initiating = $created->initiating();
+		$repository->save( $created, $initiating );
+		$pending = $initiating->pending( 'merchant_123', 'checkout_123' );
+		$repository->save( $initiating, $pending );
 	}
 }

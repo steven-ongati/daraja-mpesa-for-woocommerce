@@ -112,7 +112,13 @@ final class InMemoryPaymentAttemptRepository implements PaymentAttemptRepository
 	public function save( PaymentAttempt $expected, PaymentAttempt $updated ): void {
 		$current = $this->attempts[ $expected->attempt_id() ] ?? null;
 
-		if ( null === $current || $current->version() !== $expected->version() ) {
+		if (
+			null === $current
+			|| $current->version() !== $expected->version()
+			|| $expected->id() !== $updated->id()
+			|| $expected->attempt_id() !== $updated->attempt_id()
+			|| $expected->version() + 1 !== $updated->version()
+		) {
 			throw new ConcurrentAttemptUpdate( 'The in-memory attempt changed.' );
 		}
 

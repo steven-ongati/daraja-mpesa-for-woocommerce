@@ -52,7 +52,9 @@ final class CallbackReconciler {
 
 		if ( AttemptState::SETTLED === $attempt->state() ) {
 			if ( $payload->is_successful() && $attempt->receipt_number() === $payload->receipt_number() ) {
-				$this->orders->complete( $attempt->order_id(), (string) $attempt->receipt_number(), $attempt->attempt_id() );
+				if ( $this->orders->is_current_attempt( $attempt->order_id(), $attempt->attempt_id() ) ) {
+					$this->orders->complete( $attempt->order_id(), (string) $attempt->receipt_number(), $attempt->attempt_id() );
+				}
 				return $attempt;
 			}
 
@@ -80,6 +82,24 @@ final class CallbackReconciler {
 			AttemptState::TIMED_OUT => $attempt,
 			default => throw new CallbackConflict( 'The callback conflicts with an existing payment outcome.' ),
 		};
+
+		if ( $successful !== $attempt ) {
+			$this->repository->save( $attempt, $successful );
+			$attempt = $successful;
+		}
+
+		if ( ! $this->orders->is_current_attempt( $attempt->order_id(), $attempt->attempt_id() ) ) {
+			$updated = AttemptState::MANUAL_REVIEW === $successful->state()
+				? $successful
+				: $successful->require_manual_review();
+			$this->save_if_changed( $attempt, $updated );
+			$this->logger->warning(
+				'payment.callback_superseded_attempt',
+				array( 'attempt_id' => $attempt->attempt_id() )
+			);
+			return $updated;
+		}
+
 		$amount  = $payload->amount();
 		$phone   = $payload->phone_number();
 		$receipt = $payload->receipt_number();
